@@ -6,7 +6,9 @@ AKT_LAPSZAM=$(curl -s www.es.hu | fgrep '"lapszamvalaszto"')
 year=$(echo $AKT_LAPSZAM | sed 's/.*id="lapszamvalaszto">\([^ ]\+\)\..*/\1/')
 week=$(echo $AKT_LAPSZAM | sed 's/.*id="lapszamvalaszto">[^ ]\+\.[^,]\+, \([0-9]\+\)\..*/\1/')
 
-echo $year $week
+### print debugger
+### echo $year $week
+
 ## ebook-convert es.recipe es_${year}-${week}.mobi \
 ##               --output-profile kindle \
 ##               --smarten-punctuation \

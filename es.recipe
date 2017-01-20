@@ -1,0 +1,179 @@
+# -*- coding: utf-8 -*-
+__license__   = 'GPL v3'
+__copyright__ = '2010, Zsolt Botykai <zsoltika@gmail.com>'
+'''
+A recipe for Calibre to fetch http://www.es.hu , and generate an article list 
+to fetch, then get rid of the unnecessary scrap at the site (e.g. facebook 
+buttons, ads...)
+'''
+
+# The recipe modifies the case of titles and searches via regexs
+import  datetime
+import  os
+import  string, re
+from    string import capwords
+
+from    calibre.web.feeds.news       import BasicNewsRecipe
+from    calibre.ebooks.BeautifulSoup import Tag, NavigableString
+
+class EletEsIrodalom(BasicNewsRecipe):
+    
+    title                   = u"Élet és Irodalom"
+    title                  += u" "
+    __author__              = 'Zsolt Botykai'
+    description             = u"Élet és Irodalom"
+    description                  += u" "
+    INDEX                   = 'http://www.es.hu/'
+    language                = 'hu'
+    remove_javascript       = True
+    remove_empty_feeds      = True
+    no_stylesheets          = True
+    auto_cleanup            = True
+    publication_type        = 'magazine'
+    encoding = 'UTF-8'
+    siteuser = os.environ['ES_USER']
+    sitepass = os.environ['ES_PASS']
+
+    # without the background color setup, the conversion to pdf produced 
+    # black pages with white text 
+    extra_css = '''
+                    body { background-color: white; color: black; }
+                    p { text-align: justify; margin_top: 0px; }
+                '''
+
+    masthead_url='http://www.es.hu/images/logo.jpg'
+
+    def postprocess_html(self, soup, first):
+        html_title=soup.find('title').string
+        new_html_title=html_title.replace(u" | ÉLET ÉS IRODALOM","")
+        new_title_tag=Tag(soup, 'title')
+        new_title_tag.insert(0,new_html_title)
+        soup.find('title').replaceWith(new_title_tag)
+        h2_title=soup.find('h2').string
+        new_h2_title=h2_title.replace(u" | ÉLET ÉS IRODALOM","")
+        new_h2=Tag(soup, 'h2')
+        new_h2.insert(0,new_h2_title)
+        soup.find('h2').replaceWith(new_h2)
+        for para in soup.findAll('p'):
+            para['height']=1
+
+        return soup
+
+
+    def get_browser(self):
+        br = BasicNewsRecipe.get_browser(self)
+        br.open('http://www.es.hu/belepes')
+
+        #LOGIN form is this or what
+        br.select_form(nr=1)
+
+        br['']   = siteuser
+        br['cpassword'] = sitepass
+        return br
+
+    def get_cover_url(self):
+        return 'http://www.es.hu/images/logo.jpg'
+
+    def parse_index(self):
+        articles = []
+
+        soup = self.index_to_soup(self.INDEX)
+        datediv = soup.find('div', attrs={'class':'selectContainer'})
+        datespan = datediv.find('span')
+        gotdate = self.tag_to_string(datespan)
+        # self.log("Found date: ", gotdate )
+
+        cover = soup.find('img', src=True, attrs={'class':'cover'})
+        if cover is not None:
+            self.cover_url = cover['src']
+
+#        issue = re.sub(' ', '_', gotdate)
+        issue = re.sub(u'. évfolyam, ', '/', gotdate)
+        issue = re.sub(r'\..*', '.', issue)
+        self.title += issue
+        self.description += issue
+        # self.log("Issue: ", issue)
+        
+        feeds = []
+        for section in soup.findAll('a', attrs={'class':'rovat'}):
+            section_title = string.capwords(self.tag_to_string(section))
+            if section_title == 'Szabadpolc':
+                continue
+
+            sect_url="http://www.es.hu" + section['href']
+            # self.log('Found section: ', section_title)
+            # self.log('Found URL: ', sect_url )
+            articles = []
+            sectsoup = self.index_to_soup(sect_url)
+
+            get_sect_articles(self, sectsoup, articles,gotdate)
+
+            has_sp=sectsoup.findAll('div', attrs={'id':'pager'})
+            # self.log("Lapozó: ", has_sp)
+	    # self.log(section_title, '###', articles)
+
+            if has_sp and len(articles) > 0:
+              for sp in sectsoup.findAll('div', attrs={'id':'pager'}):
+                for ps in sp.findAll('a', attrs={'class':'pagerbutton'}):
+                  ps_text=self.tag_to_string(ps)
+                  # self.log(ps_text)
+                  if re.match(r'\d+$',ps_text) and ps['href']:
+                    nl='http://www.es.hu' + ps['href']
+                    subpg = self.index_to_soup(nl)
+                    get_sect_articles(self,subpg,articles,gotdate)
+
+	    if len(articles) > 0:
+	      feeds.append((section_title, articles))
+
+        self.log(feeds)
+        return feeds
+
+def get_sect_articles(self, sectsoup, articles,gotdate):        
+
+ arturl=""
+ arttit=""
+ art_au=""
+
+ for div in sectsoup.findAll('div'):
+
+   try:
+     claz=div['class']
+   except KeyError:
+     claz=""
+
+   if claz == "title" :
+     self.log("claz: ", claz)
+     art_t=div.find('a', attrs={'class':'rovat_title'})
+     self.log("art_t: ", art_t)
+     arturl=""
+     arttit=""
+
+     if art_t and not "vegso_zoltan;valami_a_levegoben;2015-08" in art_t["href"] :
+       arttit=self.tag_to_string(art_t).strip()
+       arturl="http://www.es.hu" + art_t["href"]
+       self.log("arttit: ", arttit, " arturl: ", arturl)
+
+   art_au=""
+   if claz =="rovat_foot" :
+     art_au = self.tag_to_string(div)   
+     art_au = re.sub(r'a *?szerz.*?tov.*?bbi *?cikkei','',art_au)
+     art_au = re.sub(r'(tov.*?bb) *?\1 *?$','',art_au)
+     art_au = art_au.strip()
+     self.log("IN art_au: ", art_au)
+   
+   self.log("arturl: ", arturl)
+   self.log("arttit: ", arttit)
+   self.log("art_au: ", art_au)
+   self.log("articles: ", articles)
+
+   if art_au and arttit and arturl :
+     self.log("arturl: ", arturl)
+     self.log("arttit: ", arttit)
+     self.log("art_au: ", art_au)
+     articles.append({'title':art_au + ' - ' + arttit, 'url':arturl, 'description':'','date': gotdate})
+     self.log("articles: ", articles)
+     art_au=""
+     arttit=""
+     arturl=""
+     art_t=""
+
