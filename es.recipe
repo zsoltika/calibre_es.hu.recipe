@@ -18,21 +18,20 @@ from    calibre.ebooks.BeautifulSoup import Tag, NavigableString
 
 class EletEsIrodalom(BasicNewsRecipe):
     
-    title                   = u"Élet és Irodalom"
-    title                  += u" "
-    __author__              = 'Zsolt Botykai'
-    description             = u"Élet és Irodalom"
-    description                  += u" "
+    title                   = u'Élet és Irodalom '
+    __author__              = u'Zsolt Botykai '
+    description             = u'Élet és Irodalom hetilap '
     INDEX                   = 'http://www.es.hu/'
     language                = 'hu'
+    simultaneous_downloads  = 2
+    timefmt                 = ' [%Y-%m-%d %H:%M]'
+    tags                    = u'politika, irodalom, hetilap, újság, magyar nyelvű, vers, vélemény, kritika, interjú'
+    publication_type        = 'magazine'
     remove_javascript       = True
     remove_empty_feeds      = True
     no_stylesheets          = True
     auto_cleanup            = True
-    publication_type        = 'magazine'
     encoding = 'UTF-8'
-    siteuser = os.environ['ES_USER']
-    sitepass = os.environ['ES_PASS']
 
     # without the background color setup, the conversion to pdf produced 
     # black pages with white text 
@@ -61,14 +60,19 @@ class EletEsIrodalom(BasicNewsRecipe):
 
 
     def get_browser(self):
+        siteuser = os.environ['ES_USER']
+        sitepass = os.environ['ES_PASS']
+
         br = BasicNewsRecipe.get_browser(self)
         br.open('http://www.es.hu/belepes')
 
-        #LOGIN form is this or what
+        #LOGIN form filling
         br.select_form(nr=1)
+        br.form.set_value(siteuser,nr=1)
+        br.form.set_value(sitepass,nr=2)
 
-        br['']   = siteuser
-        br['cpassword'] = sitepass
+        br.submit()
+
         return br
 
     def get_cover_url(self):
@@ -78,8 +82,8 @@ class EletEsIrodalom(BasicNewsRecipe):
         articles = []
 
         soup = self.index_to_soup(self.INDEX)
-        datediv = soup.find('div', attrs={'class':'selectContainer'})
-        datespan = datediv.find('span')
+        datediv = soup.find('div', attrs={'id':'header'})
+        datespan = datediv.find('a')
         gotdate = self.tag_to_string(datespan)
         # self.log("Found date: ", gotdate )
 
@@ -87,12 +91,14 @@ class EletEsIrodalom(BasicNewsRecipe):
         if cover is not None:
             self.cover_url = cover['src']
 
-#        issue = re.sub(' ', '_', gotdate)
+        # issue = re.sub(' ', '_', gotdate)
         issue = re.sub(u'. évfolyam, ', '/', gotdate)
         issue = re.sub(r'\..*', '.', issue)
         self.title += issue
         self.description += issue
         # self.log("Issue: ", issue)
+        # self.log("title: ", self.title)
+        # self.log("description: ", self.description)
         
         feeds = []
         for section in soup.findAll('a', attrs={'class':'rovat'}):
