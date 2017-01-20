@@ -17,7 +17,6 @@ from    calibre.web.feeds.news       import BasicNewsRecipe
 from    calibre.ebooks.BeautifulSoup import Tag, NavigableString
 
 class EletEsIrodalom(BasicNewsRecipe):
-    
     title                   = u'Élet és Irodalom '
     __author__              = u'Zsolt Botykai '
     description             = u'Élet és Irodalom hetilap '
@@ -37,10 +36,10 @@ class EletEsIrodalom(BasicNewsRecipe):
     # black pages with white text 
     extra_css = '''
                     body { background-color: white; color: black; }
-                    p { text-align: justify; margin_top: 0px; }
+                    p { text-align: justify; margin_top: 0px; margin-bottom: 0px; }
                 '''
 
-    masthead_url='http://www.es.hu/images/logo.jpg'
+    masthead_url='https://c1.staticflickr.com/1/475/32050957890_e7d913da49_o.jpg'
 
     def postprocess_html(self, soup, first):
         html_title=soup.find('title').string
@@ -76,7 +75,7 @@ class EletEsIrodalom(BasicNewsRecipe):
         return br
 
     def get_cover_url(self):
-        return 'http://www.es.hu/images/logo.jpg'
+        return 'https://c1.staticflickr.com/1/475/32050957890_e7d913da49_o.jpg'
 
     def parse_index(self):
         articles = []
@@ -85,22 +84,17 @@ class EletEsIrodalom(BasicNewsRecipe):
         datediv = soup.find('div', attrs={'id':'header'})
         datespan = datediv.find('a')
         gotdate = self.tag_to_string(datespan)
-        # self.log("Found date: ", gotdate )
 
         cover = soup.find('img', src=True, attrs={'class':'cover'})
         if cover is not None:
             self.cover_url = cover['src']
 
-        # issue = re.sub(' ', '_', gotdate)
         issue = re.sub(u'. évfolyam, ', '/', gotdate)
         issue = re.sub(r'\..*', '.', issue)
         self.title += issue
         self.description += issue
-        # self.log("Issue: ", issue)
-        # self.log("title: ", self.title)
-        # self.log("description: ", self.description)
-        
         feeds = []
+
         # newspaper sections are rarely changing so it's much easier this way
         sections = [
             [u'Publicisztika'   , 'http://www.es.hu/rovat/publicisztika'] ,
@@ -112,11 +106,20 @@ class EletEsIrodalom(BasicNewsRecipe):
             [u'Könyvkritika'    , 'http://www.es.hu/rovat/konyvkritika'] ,
             [u'Művészetkritika' , 'http://www.es.hu/rovat/muveszetkritika'] 
         ]
+
         for section in sections:
             section_title = section[0]
             sect_url      = section[1]
             articles = []
+            self.log('Processing section: ', section)
             sectsoup = self.index_to_soup(sect_url)
+
+            self.log('  ... check if redirected ...')
+            check_if_redirected(self, sectsoup, gotdate, section, articles)
+
+            if len(articles) > 0:
+                feeds.append((section_title, articles))
+                continue
 
             get_sect_articles(self, sectsoup, articles,gotdate)
 
@@ -125,67 +128,65 @@ class EletEsIrodalom(BasicNewsRecipe):
 	        # self.log(section_title, '###', articles)
 
             if has_sp and len(articles) > 0:
-              for sp in sectsoup.findAll('div', attrs={'id':'pager'}):
-                for ps in sp.findAll('a', attrs={'class':'pagerbutton'}):
-                  ps_text=self.tag_to_string(ps)
-                  # self.log(ps_text)
-                  if re.match(r'\d+$',ps_text) and ps['href']:
-                    nl='http://www.es.hu' + ps['href']
-                    subpg = self.index_to_soup(nl)
-                    get_sect_articles(self,subpg,articles,gotdate)
+                for sp in sectsoup.findAll('div', attrs={'id':'pager'}):
+                    for ps in sp.findAll('a', attrs={'class':'pagerbutton'}):
+                        ps_text=self.tag_to_string(ps)
+                        # self.log(ps_text)
+                        if re.match(r'\d+$',ps_text) and ps['href']:
+                            nl='http://www.es.hu' + ps['href']
+                            subpg = self.index_to_soup(nl)
+                            get_sect_articles(self,subpg,articles,gotdate)
 
 	    if len(articles) > 0:
-	      feeds.append((section_title, articles))
+	        feeds.append((section_title, articles))
 
-        self.log(feeds)
         return feeds
 
-def get_sect_articles(self, sectsoup, articles,gotdate):        
+def check_if_redirected(self, sectsoup, gotdate, section, articles):
+    arturl  = ""
+    arttit  = ""
+    artau   = ""
+    artdesc = ""
 
-    arturl=""
-    arttit=""
-    art_au=""
+    isredirected = sectsoup.find('meta', attrs={'itemprop':'url'})
+    if isredirected:
+        self.log('  Redirection occurred for ', section[1])
+        arturl = isredirected['content']
+        self.log("    url: ", arturl)
+        artau  = sectsoup.find('span', attrs={'itemprop':'author'}).string
+        self.log("    author: ", artau)
+        arttit = sectsoup.find('h1').contents[0]
+        self.log("    title: ", arttit)
+        if artau and arttit and arturl :
+            articles.append({'title':artau + ' - ' + arttit, 'url':arturl, 'description':artdesc,'date': gotdate})
 
-    for div in sectsoup.findAll('div'):
-   
-      try:
-        claz=div['class']
-      except KeyError:
-        claz=""
-   
-      if claz == "title" :
-        self.log("claz: ", claz)
-        art_t=div.find('a', attrs={'class':'rovat_title'})
-        self.log("art_t: ", art_t)
-        arturl=""
-        arttit=""
-   
-        if art_t and not "vegso_zoltan;valami_a_levegoben;2015-08" in art_t["href"] :
-          arttit=self.tag_to_string(art_t).strip()
-          arturl="http://www.es.hu" + art_t["href"]
-          self.log("arttit: ", arttit, " arturl: ", arturl)
-   
-      art_au=""
-      if claz =="rovat_foot" :
-        art_au = self.tag_to_string(div)   
-        art_au = re.sub(r'a *?szerz.*?tov.*?bbi *?cikkei','',art_au)
-        art_au = re.sub(r'(tov.*?bb) *?\1 *?$','',art_au)
-        art_au = art_au.strip()
-        self.log("IN art_au: ", art_au)
-      
-      self.log("arturl: ", arturl)
-      self.log("arttit: ", arttit)
-      self.log("art_au: ", art_au)
-      self.log("articles: ", articles)
-   
-      if art_au and arttit and arturl :
-        self.log("arturl: ", arturl)
-        self.log("arttit: ", arttit)
-        self.log("art_au: ", art_au)
-        articles.append({'title':art_au + ' - ' + arttit, 'url':arturl, 'description':'','date': gotdate})
-        self.log("articles: ", articles)
-        art_au=""
-        arttit=""
-        arturl=""
-        art_t=""
-   
+def get_sect_articles(self, sectsoup, articles,gotdate):
+    arturl  = ""
+    arttit  = ""
+    artau   = ""
+    artdesc = ""
+
+    for div in sectsoup.findAll('div', attrs={'itemtype':'http://schema.org/Article'}):
+        self.log('  Found article... ')
+
+        try:
+            artau = div.span.contents[0]
+        except AttributeError:
+            artau = 'A szerk.'
+
+        self.log("    author: ", artau)
+        arttit = div.h2.a.contents[0]
+        self.log("    title: ", arttit)
+        arturl = "http://www.es.hu" + div.h2.a['href']
+        self.log("    url: ", arturl)
+        artdesc = "".join(str(item) for item in div.div)
+        self.log("    desc: ", artdesc)
+
+        if artau and arttit and arturl :
+            articles.append({'title':artau + ' - ' + arttit, 'url':arturl, 'description':artdesc,'date': gotdate})
+
+        art_au = ""
+        arttit = ""
+        arturl = ""
+        artdesc = ""
+
