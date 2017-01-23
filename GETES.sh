@@ -19,7 +19,7 @@ ebook-convert es.recipe es_${year}-${week}.mobi \
               --remove-paragraph-spacing \
               --sr1-search ".A vers olvas.s.hoz, k.rj.k, fizessen el..." \
               --sr1-replace ""
-ebook-convert es_${year}-${week}.mobi es_L${year}-${week}.pdf \
+ebook-convert es_${year}-${week}.mobi es_${year}-${week}.pdf \
               --extra-css "body  {background-color: white; color: black; }" \
               --paper-size a4 \
               --smarten-punctuation \
@@ -28,6 +28,8 @@ ebook-convert es_${year}-${week}.mobi es_L${year}-${week}.pdf \
               --toc-title "Tartalom" \
               --pretty-print \
               --insert-blank-line \
+              --remove-paragraph-spacing-indent-size 1.3 \
+              --remove-paragraph-spacing \
               --margin-bottom 50.0 \
               --margin-top 50.0 \
               --margin-left 50.0 \
