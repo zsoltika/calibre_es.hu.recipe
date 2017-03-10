@@ -30,6 +30,7 @@ class EletEsIrodalom(BasicNewsRecipe):
     remove_empty_feeds      = True
     no_stylesheets          = True
     auto_cleanup            = True
+    auto_cleanup_keep       = '//span[@itemprop="author"]|//h1[@itemprop="name"]'
     encoding = 'UTF-8'
 
     # without the background color setup, the conversion to pdf produced 
@@ -42,18 +43,35 @@ class EletEsIrodalom(BasicNewsRecipe):
     masthead_url='https://c1.staticflickr.com/1/475/32050957890_e7d913da49_o.jpg'
 
     def postprocess_html(self, soup, first):
-        html_title=soup.find('title').string
-        new_html_title=html_title.replace(u" | ÉLET ÉS IRODALOM","")
-        new_title_tag=Tag(soup, 'title')
+        html_title     = soup.find('title').string
+        new_html_title = html_title.replace(u" | ÉLET ÉS IRODALOM","")
+        new_title_tag  = Tag(soup, 'title')
+
         new_title_tag.insert(0,new_html_title)
         soup.find('title').replaceWith(new_title_tag)
-        h2_title=soup.find('h2').string
-        new_h2_title=h2_title.replace(u" | ÉLET ÉS IRODALOM","")
-        new_h2=Tag(soup, 'h2')
-        new_h2.insert(0,new_h2_title)
-        soup.find('h2').replaceWith(new_h2)
+
+        artau = get_author(self,soup)
+
+        try:
+            arttit = soup.find('h1').contents[0]
+        except AttributeError:
+            arttit = ''
+            self.log('SOUP: ',soup)
+
+        new_h1 = Tag(soup, 'h1')
+
+        self.log('artit: ', arttit, ' artau: ', artau)
+        new_h1.insert(0,artau + ': ' + arttit)
+        soup.find('h1').replaceWith(new_h1)
+
+        try:
+            deltag = soup.find('span', attrs={'itemprop':'author'}).string
+            _      = deltag.extract()
+        except AttributeError:
+            pass
+
         for para in soup.findAll('p'):
-            para['height']=1
+            para['height'] = 0
 
         return soup
 
@@ -102,7 +120,8 @@ class EletEsIrodalom(BasicNewsRecipe):
             [u'Interjú'         , 'http://www.es.hu/rovat/interju'] ,
             [u'Visszhang'       , 'http://www.es.hu/rovat/visszhang'] ,
             [u'Páratlan oldal'  , 'http://www.es.hu/rovat/paratlan-oldal'] ,
-            [u'Irodalom'        , 'http://www.es.hu/rovat/irodalom'] ,
+            [u'Próza'           , 'http://www.es.hu/rovat/proza'] ,
+            [u'Vers'            , 'http://www.es.hu/rovat/vers'] ,
             [u'Könyvkritika'    , 'http://www.es.hu/rovat/konyvkritika'] ,
             [u'Művészetkritika' , 'http://www.es.hu/rovat/muveszetkritika'] 
         ]
@@ -153,7 +172,9 @@ def check_if_redirected(self, sectsoup, gotdate, section, articles):
         self.log('  Redirection occurred for ', section[1])
         arturl = isredirected['content']
         self.log("    url: ", arturl)
-        artau  = sectsoup.find('span', attrs={'itemprop':'author'}).string
+
+        artau = get_author(self,sectsoup)
+
         self.log("    author: ", artau)
         arttit = sectsoup.find('h1').contents[0]
         self.log("    title: ", arttit)
@@ -168,25 +189,32 @@ def get_sect_articles(self, sectsoup, articles,gotdate):
 
     for div in sectsoup.findAll('div', attrs={'itemtype':'http://schema.org/Article'}):
         self.log('  Found article... ')
-
-        try:
-            artau = div.span.contents[0]
-        except AttributeError:
-            artau = 'A szerk.'
-
+        artau = get_author(self,div)
         self.log("    author: ", artau)
-        arttit = div.h2.a.contents[0]
+        arttit = div.h2.a.contents[0] 
         self.log("    title: ", arttit)
         arturl = "http://www.es.hu" + div.h2.a['href']
         self.log("    url: ", arturl)
-        artdesc = "".join(str(item) for item in div.div)
+        try:
+            artdesc = "".join(str(item) for item in div.div)
+        except TypeError:
+            artdesc = ""
         self.log("    desc: ", artdesc)
 
         if artau and arttit and arturl :
             articles.append({'title':artau + ' - ' + arttit, 'url':arturl, 'description':artdesc,'date': gotdate})
 
-        art_au = ""
-        arttit = ""
-        arturl = ""
+        art_au  = ""
+        arttit  = ""
+        arturl  = ""
         artdesc = ""
 
+def get_author(self,soup):
+    artau = ''
+    try:
+        artau = soup.find('span', attrs={'itemprop':'author'}).string
+    except AttributeError:
+        artau = ''
+    if not artau:
+        artau = 'A szerk.'
+    return artau
