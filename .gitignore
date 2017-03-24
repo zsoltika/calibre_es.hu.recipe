@@ -2,3 +2,5 @@
 debug/
 *.pdf
 *.mobi
+*.log
+*.epub
