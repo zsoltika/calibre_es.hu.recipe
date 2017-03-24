@@ -60,7 +60,6 @@ class EletEsIrodalom(BasicNewsRecipe):
 
         new_h1 = Tag(soup, 'h1')
 
-        self.log('artit: ', arttit, ' artau: ', artau)
         new_h1.insert(0,artau + ': ' + arttit)
         soup.find('h1').replaceWith(new_h1)
 
