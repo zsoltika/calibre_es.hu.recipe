@@ -1,5 +1,6 @@
 *~
 debug/
+DEBDIR/
 *.pdf
 *.mobi
 *.log
