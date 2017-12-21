@@ -4,12 +4,12 @@
 
 AKT_LAPSZAM=$(curl -s www.es.hu | fgrep '"lapszamvalaszto"')
 year=$(echo $AKT_LAPSZAM | sed 's/.*id="lapszamvalaszto">[ \t]*\([^ ]\+\)\..*/\1/')
-week=$(echo $AKT_LAPSZAM | sed 's/.*.vfolyam,[ \t]\+\([0-9]\+\)\.[ \t]sz.m.*/\1/')
+week=$(echo $AKT_LAPSZAM | sed 's/.*.vfolyam,[ \t]\+\([0-9]\+\)\(-[0-9]\+\)*\.[ \t]sz.m.*/\1\2/')
 
 ## DEBUG
-# echo $year 
-# echo $week
-# exit 0
+### echo $year 
+### echo $week
+### exit 0
 
 ebook-convert es.recipe es_${year}-${week}.mobi \
               --output-profile kindle \

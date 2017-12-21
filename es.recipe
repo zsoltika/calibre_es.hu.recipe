@@ -204,6 +204,9 @@ def get_sect_articles(self, sectsoup, articles,gotdate):
         arttit = div.h2.a.contents[0] 
         # self.log("    title: ", arttit)
         arturl = "http://www.es.hu" + div.h2.a['href']
+        if "brigadnaplo" in arturl:
+            continue
+
         # self.log("    url: ", arturl)
         try:
             artdesc = "".join(str(item) for item in div.div)
@@ -211,7 +214,7 @@ def get_sect_articles(self, sectsoup, articles,gotdate):
             artdesc = ""
         # self.log("    desc: ", artdesc)
 
-        if artau and arttit and arturl :
+        if artau and arttit and arturl:
             articles.append({'title':artau + ' - ' + arttit, 'url':arturl, 'description':artdesc,'date': gotdate})
 
         art_au  = ""
