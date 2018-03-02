@@ -2,7 +2,7 @@
 
 # Get the annual weekly id of the newspaper
 
-AKT_LAPSZAM=$(curl -s www.es.hu | fgrep '"lapszamvalaszto"')
+AKT_LAPSZAM=$(curl -s https://www.es.hu | fgrep '"lapszamvalaszto"')
 year=$(echo $AKT_LAPSZAM | sed 's/.*id="lapszamvalaszto">[ \t]*\([^ ]\+\)\..*/\1/')
 week=$(echo $AKT_LAPSZAM | sed 's/.*.vfolyam,[ \t]\+\([0-9]\+\)\(-[0-9]\+\)*\.[ \t]sz.m.*/\1\2/')
 
