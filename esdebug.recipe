@@ -49,9 +49,14 @@ class EletEsIrodalom(BasicNewsRecipe):
             html_title = self.tag_to_string(soup.find('title'))
 
         new_html_title = html_title.replace(u" | ÉLET ÉS IRODALOM","")
+        self.log('PPH: title3: ', new_html_title)
+        # new_title_tag  = Tag(soup, 'title')
         soup.title.clear()
         soup.title.insert(0,new_html_title)
 
+        self.log('PPH: title4: ', new_html_title)
+        #new_title_tag.insert(0,new_html_title)
+        #soup.find('title').replaceWith(new_title_tag)
 
         artau = get_author(self,soup)
 
