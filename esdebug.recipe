@@ -185,7 +185,8 @@ def check_if_redirected(self, sectsoup, gotdate, section, articles):
     if isredirected:
         # self.log('  Redirection occurred for ', section[1])
         arturl = isredirected['content']
-        # self.log("    url: ", arturl)
+        self.log("    IN REDIRECTED")
+        self.log("    url: ", arturl)
 
         artau = get_author(self,sectsoup)
 
@@ -208,10 +209,11 @@ def get_sect_articles(self, sectsoup, articles,gotdate):
         arttit = div.h2.a.contents[0] 
         # self.log("    title: ", arttit)
         arturl = "http://www.es.hu" + div.h2.a['href']
+        self.log("    IN GET_SECT_ARTICLES")
+        self.log("    url: ", arturl)
         if "brigadnaplo" in arturl:
             continue
 
-        # self.log("    url: ", arturl)
         try:
             artdesc = "".join(str(item) for item in div.div)
         except TypeError:
