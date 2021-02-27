@@ -5,7 +5,7 @@ __copyright__ = '2010, Zsolt Botykai <zsoltika@gmail.com>'
 A recipe for Calibre to fetch http://www.es.hu , and generate an article list 
 to fetch, then get rid of the unnecessary scrap at the site (e.g. facebook 
 buttons, ads...)
-'''
+[[B]]'''
 
 # The recipe modifies the case of titles and searches via regexs
 import  datetime
@@ -40,7 +40,7 @@ class EletEsIrodalom(BasicNewsRecipe):
                     p { text-align: justify; margin_top: 0px; margin-bottom: 0px; }
                 '''
 
-    masthead_url='https://c1.staticflickr.com/1/475/32050957890_e7d913da49_o.jpg'
+    #masthead_url='https://c1.staticflickr.com/1/475/32050957890_e7d913da49_o.jpg'
 
     def postprocess_html(self, soup, first):
         html_title     = soup.find('title').string
@@ -94,8 +94,8 @@ class EletEsIrodalom(BasicNewsRecipe):
 
         return br
 
-    def get_cover_url(self):
-        return 'https://c1.staticflickr.com/1/475/32050957890_e7d913da49_o.jpg'
+    # def get_cover_url(self):
+    #     return 'https://c1.staticflickr.com/1/475/32050957890_e7d913da49_o.jpg'
 
     def parse_index(self):
         articles = []
@@ -153,7 +153,7 @@ class EletEsIrodalom(BasicNewsRecipe):
 
             has_sp=sectsoup.findAll('div', attrs={'id':'pager'})
             # self.log("Lapozó: ", has_sp)
-	        # self.log(section_title, '###', articles)
+            # self.log(section_title, '###', articles)
 
             if has_sp and len(articles) > 0:
                 for sp in sectsoup.findAll('div', attrs={'id':'pager'}):
@@ -165,8 +165,8 @@ class EletEsIrodalom(BasicNewsRecipe):
                             subpg = self.index_to_soup(nl)
                             get_sect_articles(self,subpg,articles,gotdate)
 
-	    if len(articles) > 0:
-	        feeds.append((section_title, articles))
+            if len(articles) > 0:
+                feeds.append((section_title, articles))
 
         return feeds
 
@@ -180,7 +180,7 @@ def check_if_redirected(self, sectsoup, gotdate, section, articles):
     if isredirected:
         # self.log('  Redirection occurred for ', section[1])
         arturl = isredirected['content']
-        # self.log("    url: ", arturl)
+        self.log("    url: ", arturl)
 
         artau = get_author(self,sectsoup)
 
@@ -202,9 +202,16 @@ def get_sect_articles(self, sectsoup, articles,gotdate):
         # self.log("    author: ", artau)
         arttit = div.h2.a.contents[0] 
         # self.log("    title: ", arttit)
+        # self.log("    GOTURL: ", div.h2.a['href'])
         arturl = "http://www.es.hu" + div.h2.a['href']
         if "brigadnaplo" in arturl:
             continue
+        
+        # get over double slashes in article URLs
+        # self.log("    url: ", arturl)
+        usi = arturl.rfind('//')
+        if arturl[usi - 1] != ':':
+            arturl = arturl[:usi] + arturl[usi + 1:]
 
         # self.log("    url: ", arturl)
         try:
