@@ -37,7 +37,7 @@ ebook-convert es_${year}-${week}.mobi es_${year}-${week}.pdf \
               --margin-left 50.0 \
               --margin-right 50.0 
 echo "COPYING SOME FILEZ" && \
-cp es_${year}-${week}.* /mnt/c/Users/ebotzso/Documents && \
+cp es_${year}-${week}.* /mnt/c/Users/zbo/Downloads && \
 echo "AND done...."
 
 
