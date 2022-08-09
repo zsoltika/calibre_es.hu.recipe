@@ -10,7 +10,7 @@ week=$(echo $AKT_LAPSZAM | sed 's/.*vfolyam,[ \t]\+\([–0-9]\+\)\.[ \t]sz.m.*/\
 ## echo $week
 ## exit 0
 
-ebook-convert es.recipe es_${year}-${week}.mobi \
+ebook-convert es.recipe es_${year}-${week}.epub \
               --output-profile kindle \
               --smarten-punctuation \
               --change-justification justify \
@@ -21,21 +21,21 @@ ebook-convert es.recipe es_${year}-${week}.mobi \
               --sr1-search ".A vers olvas.s.hoz, k.rj.k, fizessen el..." \
               --sr1-replace "" \
               --cover es_cover.jpg
-ebook-convert es_${year}-${week}.mobi es_${year}-${week}.pdf \
-              --extra-css "body  {background-color: white; color: black; }" \
-              --paper-size a4 \
-              --smarten-punctuation \
-              --change-justification justify \
-              --title "Élet és Irodalom ${year}. ${week}. szám" \
-              --toc-title "Tartalom" \
-              --pretty-print \
-              --insert-blank-line \
-              --remove-paragraph-spacing-indent-size 1.3 \
-              --remove-paragraph-spacing \
-              --margin-bottom 50.0 \
-              --margin-top 50.0 \
-              --margin-left 50.0 \
-              --margin-right 50.0 
+# ebook-convert es_${year}-${week}.mobi es_${year}-${week}.pdf \
+#               --extra-css "body  {background-color: white; color: black; }" \
+#               --paper-size a4 \
+#               --smarten-punctuation \
+#               --change-justification justify \
+#               --title "Élet és Irodalom ${year}. ${week}. szám" \
+#               --toc-title "Tartalom" \
+#               --pretty-print \
+#               --insert-blank-line \
+#               --remove-paragraph-spacing-indent-size 1.3 \
+#               --remove-paragraph-spacing \
+#               --margin-bottom 50.0 \
+#               --margin-top 50.0 \
+#               --margin-left 50.0 \
+#               --margin-right 50.0 
 echo "COPYING SOME FILEZ" && \
 cp es_${year}-${week}.* /mnt/c/Users/zbo/Downloads && \
 echo "AND done...."
