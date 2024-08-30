@@ -207,13 +207,7 @@ def get_sect_articles(self, sectsoup, articles,gotdate):
         if "brigadnaplo" in arturl:
             continue
         
-        # get over double slashes in article URLs
-        # self.log("    url: ", arturl)
-        usi = arturl.rfind('//')
-        if arturl[usi - 1] != ':':
-            arturl = arturl[:usi] + arturl[usi + 1:]
-
-        # self.log("    url: ", arturl)
+        self.log("    url: ", arturl)
         try:
             artdesc = "".join(str(item) for item in div.div)
         except TypeError:
