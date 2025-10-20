@@ -42,6 +42,20 @@ class EletEsIrodalom(BasicNewsRecipe):
 
     #masthead_url='https://c1.staticflickr.com/1/475/32050957890_e7d913da49_o.jpg'
 
+    def preprocess_html(self, soup):
+        for div in soup.find_all("div", class_="banner"):
+            div.unwrap()  # type: ignore
+        for div in soup.find_all("div", class_="row"):
+            div.unwrap()  # type: ignore
+        for div in soup.find_all("div", attrs={"id": "header"}):
+            div.unwrap()  # type: ignore
+        for div in soup.find_all("div", attrs={"id": "sidebar"}):
+            div.unwrap()  # type: ignore
+        for div in soup.find_all("div", attrs={"id": "footer"}):
+            div.unwrap()  # type: ignore
+
+        return soup
+
     def postprocess_html(self, soup, first):
         html_title     = soup.find('title').string
         if not html_title:
@@ -75,6 +89,17 @@ class EletEsIrodalom(BasicNewsRecipe):
         for para in soup.findAll('p'):
             para['height'] = 0
 
+        for div in soup.find_all("div", class_="banner"):
+            div.unwrap()  # type: ignore
+        for div in soup.find_all("div", class_="row"):
+            div.unwrap()  # type: ignore
+        for div in soup.find_all("div", attrs={"id": "header"}):
+            div.unwrap()  # type: ignore
+        for div in soup.find_all("div", attrs={"id": "sidebar"}):
+            div.unwrap()  # type: ignore
+        for div in soup.find_all("div", attrs={"id": "footer"}):
+            div.unwrap()  # type: ignore
+
         return soup
 
 
@@ -94,20 +119,13 @@ class EletEsIrodalom(BasicNewsRecipe):
 
         return br
 
-    # def get_cover_url(self):
-    #     return 'https://c1.staticflickr.com/1/475/32050957890_e7d913da49_o.jpg'
-
     def parse_index(self):
         articles = []
 
         soup = self.index_to_soup(self.INDEX)
-        # self.log("got soup: ", soup)
         datediv = soup.find('div', attrs={'id':'header'})
-        # self.log("found datediv: ", datediv)
         datespan = datediv.find('a')
-        # self.log("found date: ", datespan)
         gotdate = self.tag_to_string(datespan)
-        # self.log("found date: ", gotdate)
 
         cover = soup.find('img', src=True, attrs={'class':'cover'})
         if cover is not None:
@@ -115,10 +133,7 @@ class EletEsIrodalom(BasicNewsRecipe):
 
         issue = re.sub(u'. évfolyam, ', '/', gotdate)
         issue = re.sub(r'\..*', '.', issue)
-        # self.log("found issue: ", issue)
-        # self.log("title: ", self.title)
         self.title += issue
-        # self.log("title new: ", self.title)
         self.description += issue
         feeds = []
 
@@ -139,10 +154,8 @@ class EletEsIrodalom(BasicNewsRecipe):
             section_title = section[0]
             sect_url      = section[1]
             articles = []
-            # self.log('Processing section: ', section)
             sectsoup = self.index_to_soup(sect_url)
 
-            # self.log('  ... check if redirected ...')
             check_if_redirected(self, sectsoup, gotdate, section, articles)
 
             if len(articles) > 0:
@@ -152,8 +165,6 @@ class EletEsIrodalom(BasicNewsRecipe):
             get_sect_articles(self, sectsoup, articles,gotdate)
 
             has_sp=sectsoup.findAll('div', attrs={'id':'pager'})
-            # self.log("Lapozó: ", has_sp)
-            # self.log(section_title, '###', articles)
 
             if has_sp and len(articles) > 0:
                 for sp in sectsoup.findAll('div', attrs={'id':'pager'}):
