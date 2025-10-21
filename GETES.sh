@@ -11,8 +11,6 @@ week=$(echo $AKT_LAPSZAM | sed 's/.*vfolyam,[ \t]\+\([–0-9]\+\)\.[ \t]sz.m.*/\
 ## exit 0
 
 ebook-convert es.recipe es_${year}-${week}.epub \
-  -vvvv \
-  -d debugdir \
   --output-profile kindle \
   --smarten-punctuation \
   --change-justification justify \
