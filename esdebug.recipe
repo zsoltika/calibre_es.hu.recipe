@@ -29,7 +29,7 @@ class EletEsIrodalom(BasicNewsRecipe):
     remove_javascript       = True
     remove_empty_feeds      = True
     no_stylesheets          = True
-    auto_cleanup            = True
+    auto_cleanup            = False
     auto_cleanup_keep       = '//span[@itemprop="author"]|//h1[@itemprop="name"]'
     encoding = 'UTF-8'
 
@@ -41,6 +41,26 @@ class EletEsIrodalom(BasicNewsRecipe):
                 '''
 
     masthead_url='https://c1.staticflickr.com/1/475/32050957890_e7d913da49_o.jpg'
+
+    def preprocess_html(self, soup):
+        for div in soup.find_all("div", class_="banner"):
+            div.decompose()  # type: ignore
+        for div in soup.find_all("div", class_="row"):
+            div.decompose()  # type: ignore
+        for div in soup.find_all("div", attrs={"id": "header"}):
+            div.decompose()  # type: ignore
+        for div in soup.find_all("div", attrs={"id": "sidebar"}):
+            div.decompose()  # type: ignore
+        for div in soup.find_all("div", attrs={"id": "footer"}):
+            div.decompose()  # type: ignore
+        for div in soup.find_all("div", attrs={"id": "copy"}):
+            div.decompose()  # type: ignore
+        for ul in soup.find_all("ul", attrs={"id": "tools"}):
+            ul.decompose()  # type: ignore
+        for span in soup.find_all("span", class_="lapszam"):
+            span.decompose()  # type: ignore
+
+        return soup
 
     def postprocess_html(self, soup, first):
         html_title     = soup.find('title').string
